@@ -16,13 +16,13 @@ var TYPE_SIZE = {
 }
 
 var TYPE_CODE = {
-  uint8:      0
-  uint16:     1
-  uint32:     2
-  int8:       3
-  int16:      4
-  int32:      5
-  float32:    6
+  uint8:      0,
+  uint16:     1,
+  uint32:     2,
+  int8:       3,
+  int16:      4,
+  int32:      5,
+  float32:    6,
   float64:    7
 }
 
@@ -37,7 +37,7 @@ function processTypes(types) {
       offset:     offset,
       count:      count,
       size:       size,
-      type:       typeIf,
+      type:       typeId,
       name:       types[i].name
     })
     offset += size
@@ -60,12 +60,12 @@ function convertJSONtoBinary(json) {
   
   //Compute size of header
   var headerOffset = 4
-  var headerSize = 28
+  var headerSize = 32
   vertexTypes.types.forEach(function(type) {
-    headerSize += 12 + type.nameLength 
+    headerSize += 12 + type.name.length 
   })
   cellTypes.types.forEach(function(type) {
-    headerSize += 12 + type.nameLength
+    headerSize += 12 + type.name.length
   })
 
   //Compute size of initial cell complex
@@ -86,19 +86,19 @@ function convertJSONtoBinary(json) {
 
   function writeMagic(buffer) {
     for(var i=0; i<4; ++i) {
-      buffer[i] = MAGIC.charCodeAt(i)
+      buffer.writeUInt8(MAGIC.charCodeAt(i), i)
     }
   }
 
   function writeType(buffer, ptr, type) {
-    buffer.writeUint32BE(type.count, ptr)
+    buffer.writeUInt32BE(type.count, ptr)
     ptr += 4
-    buffer.writeUint32BE(TYPE_CODE[type.type], ptr)
+    buffer.writeUInt32BE(TYPE_CODE[type.type], ptr)
     ptr += 4
-    buffer.writeUint32(type.name.length, ptr)
+    buffer.writeUInt32BE(type.name.length, ptr)
     ptr += 4
     for(var j=0; j<type.name.length; ++j) {
-      buffer.writeUint8(type.name.charCodeAt(j), ptr)
+      buffer.writeUInt8(type.name.charCodeAt(j), ptr)
       ptr += 1
     }
     return ptr
@@ -110,25 +110,25 @@ function convertJSONtoBinary(json) {
     var minorVersion = semverParts[1]>>>0
     var patchVersion = semverParts[2]>>>0
 
-    buffer.writeUint32BE(splitSectionOffset, 0)
-    buffer.writeUint32BE(majorVersion, 4)
-    buffer.writeUint32BE(minorVersion, 8)
-    buffer.writeUint32BE(patchVersion, 12)
-    buffer.writeUint32BE(header.vertexCount, 16)
-    buffer.writeUint32BE(header.cellCount, 20)
-    buffer.writeUint32BE(vertexTypes.types.length, 24)
-    buffer.writeUint32BE(cellTypes.types.length, 28)
+    buffer.writeUInt32BE(splitSectionOffset, 0)
+    buffer.writeUInt32BE(majorVersion, 4)
+    buffer.writeUInt32BE(minorVersion, 8)
+    buffer.writeUInt32BE(patchVersion, 12)
+    buffer.writeUInt32BE(header.vertexCount, 16)
+    buffer.writeUInt32BE(header.cellCount, 20)
+    buffer.writeUInt32BE(vertexTypes.types.length, 24)
+    buffer.writeUInt32BE(cellTypes.types.length, 28)
 
     var ptr = 32
 
     var vtypes = vertexTypes.types
     for(var i=0; i<vtypes.length; ++i) {
-      ptr = writeType(buffer, ptr, vtypes[i].type)
+      ptr = writeType(buffer, ptr, vtypes[i])
     }
 
     var ctypes = cellTypes.types
     for(var i=0; i<ctypes.length; ++i) {
-      ptr = writeType(buffer, ptr, ctypes[i].type)
+      ptr = writeType(buffer, ptr, ctypes[i])
     }
   }
 
@@ -141,17 +141,17 @@ function convertJSONtoBinary(json) {
     for(var i=0; i<count; ++i)
     switch(ftype) {
       case 'uint8':
-        buffer.writeUint8(value[i], ptr)
+        buffer.writeUInt8(value[i], ptr)
         ptr += 1
       break
 
       case 'uint16':
-        buffer.writeUint16BE(value[i], ptr)
+        buffer.writeUInt16BE(value[i], ptr)
         ptr += 2
       break
 
       case 'uint32':
-        buffer.writeUint32BE(value[i], ptr)
+        buffer.writeUInt32BE(value[i], ptr)
         ptr += 4
       break
 
@@ -184,8 +184,8 @@ function convertJSONtoBinary(json) {
   }
 
   function writeInitialComplex(buffer) {
-    buffer.writeUint32BE(initialVertexCount, 0)
-    buffer.writeUint32BE(initialCellCount, 4)
+    buffer.writeUInt32BE(initialVertexCount, 0)
+    buffer.writeUInt32BE(initialCellCount, 4)
 
     var ptr = 8
     var vtypes = vertexTypes.types
@@ -204,14 +204,14 @@ function convertJSONtoBinary(json) {
     for(var i=0; i<initialCellCount; ++i) {
       var cell = cells[i]
       for(var j=0; j<3; ++j) {
-        buffer.writeUint32BE(cell[j], ptr)
+        buffer.writeUInt32BE(cell[j], ptr)
         ptr += 4
       }
     }
 
     var ctypes = cellTypes.types
     var cattrs = initialComplex.cellAttributes
-    for(var i=0; i<initialVertexCount; ++i) {
+    for(var i=0; i<initialCellCount; ++i) {
       for(var j=0; j<ctypes.length; ++j) {
         ptr = writeAttribute(
           buffer,
@@ -235,13 +235,13 @@ function convertJSONtoBinary(json) {
     for(var i=0; i<vertexSplits.length; ++i) {
       var offset = i * splitSize
       var vsplit = vertexSplits[i]
-      buffer.writeUint32BE(vsplit.baseVertex, offset)
+      buffer.writeUInt32BE(vsplit.baseVertex, offset)
 
       var lf = vsplit.leftOrientation ? 128 : 0
-      buffer.writeUint8(vsplit.left + lf, offset+4)
+      buffer.writeUInt8(vsplit.left + lf, offset+4)
 
       var rf = vsplit.rightOrientation ? 128 : 0
-      buffer.writeUint8(vsplit.right + rf, offset+5)
+      buffer.writeUInt8(vsplit.right + rf, offset+5)
 
       offset += 6
 

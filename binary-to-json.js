@@ -39,21 +39,22 @@ function convertBinaryToJSON(buffer) {
     throw new Error('3p: invalid buffer')
   }
   for(var i=0; i<4; ++i) {
-    if(buffer[i] !== MAGIC.charCodeAt(i)) {
+    if(buffer.readUInt8(i) !== MAGIC.charCodeAt(i)) {
       throw new Error('3p: invalid magic number')
     }
   }
+  buffer = buffer.slice(4)
 
-  function readAttributeTypes(count) {
+  function readAttributeTypes(attrCount) {
     var ptr = 0
     var typeInfo = []
-    for(var i=0; i<count; ++i) {
+    for(var i=0; i<attrCount; ++i) {
       if(buffer.length < ptr + 12) {
         throw new Error('3p: error reading attribute types, too small')
       }
-      var count = buffer.readUint32BE(ptr)
-      var typeNo = buffer.readUint32BE(ptr+4)
-      var nameLength = buffer.readUint32BE(ptr+8)
+      var count = buffer.readUInt32BE(ptr)
+      var typeNo = buffer.readUInt32BE(ptr+4)
+      var nameLength = buffer.readUInt32BE(ptr+8)
 
       //Check type code
       if(typeNo >= TYPE_CODES.length) {
@@ -70,7 +71,7 @@ function convertBinaryToJSON(buffer) {
       typeInfo.push({
         count: count,
         type:  TYPE_CODES[typeNo],
-        nae:   name
+        name:   name
       })
     }
     buffer = buffer.slice(ptr)
@@ -85,15 +86,15 @@ function convertBinaryToJSON(buffer) {
     //Skip splitOffset for now
 
     //Read in properties
-    var majorVersion = buffer.readUint32BE(4)
-    var minorVersion = buffer.readUint32BE(8)
-    var patchVersion = buffer.readUint32BE(12)
-    var vertexCount  = buffer.readUint32BE(16)
-    var cellCount    = buffer.readUint32BE(20)
+    var majorVersion = buffer.readUInt32BE(4)
+    var minorVersion = buffer.readUInt32BE(8)
+    var patchVersion = buffer.readUInt32BE(12)
+    var vertexCount  = buffer.readUInt32BE(16)
+    var cellCount    = buffer.readUInt32BE(20)
 
     //Read attribute type info
-    var vertexAttributeCount = buffer.readUint32BE(24)
-    var cellAttributeCount   = buffer.readUint32BE(28)
+    var vertexAttributeCount = buffer.readUInt32BE(24)
+    var cellAttributeCount   = buffer.readUInt32BE(28)
     buffer = buffer.slice(32)
     var vertexAttributeTypes = readAttributeTypes(vertexAttributeCount)
     var cellAttributeTypes = readAttributeTypes(cellAttributeCount)
@@ -111,10 +112,10 @@ function convertBinaryToJSON(buffer) {
 
   //Compute vertex attribute size and cell attribute size
   var vtypes = header.vertexAttributeTypes
-  var vertexSize = computeAttributeSize(vtypes)
+  var vertexSize = computeTypeSize(vtypes)
 
   var ctypes = header.cellAttributeTypes
-  var cellSize   = computeAttributeSize(ctypes)
+  var cellSize   = computeTypeSize(ctypes)
 
   function readAttributeValue(ptr, type) {
     var ftype = type.type
@@ -122,15 +123,15 @@ function convertBinaryToJSON(buffer) {
     for(var i=0; i<type.count; ++i)
     switch(ftype) {
       case 'uint8':
-        result[i] = buffer.readUint8(ptr)
+        result[i] = buffer.readUInt8(ptr)
         ptr += 1
       break
       case 'uint16':
-        result[i] = buffer.readUint16BE(ptr)
+        result[i] = buffer.readUInt16BE(ptr)
         ptr += 2
       break
       case 'uint32':
-        result[i] = buffer.readUint32BE(ptr)
+        result[i] = buffer.readUInt32BE(ptr)
         ptr += 4
       break
       case 'int8':
@@ -173,8 +174,8 @@ function convertBinaryToJSON(buffer) {
       throw new Error('3p: missing size info for initialComplex')
     }
 
-    var initialVertexCount = buffer.readUint32BE(0)
-    var initialCellCount   = buffer.readUint32BE(4)
+    var initialVertexCount = buffer.readUInt32BE(0)
+    var initialCellCount   = buffer.readUInt32BE(4)
 
     if(buffer.length < 8 + 
       initialVertexCount * vertexSize +
@@ -197,7 +198,7 @@ function convertBinaryToJSON(buffer) {
     for(var i=0; i<initialCellCount; ++i) {
       var cell = new Array(3)
       for(var j=0; j<3; ++j) {
-        cell[j] = buffer.readUint32BE(ptr)
+        cell[j] = buffer.readUInt32BE(ptr)
         ptr += 4
       }
       cells[i] = cell
@@ -215,31 +216,46 @@ function convertBinaryToJSON(buffer) {
     buffer = buffer.slice(ptr)
 
     return {
+      vertexCount: initialVertexCount,
+      cellCount: initialCellCount,
       cells: cells,
       vertexAttributes: vertexAttributes,
       cellAttributes: cellAttributes
     }
   }
 
+  var initialComplex = parseInitialComplex()
+
   var splitSize = 6 + vertexSize + 2 * cellSize
+
+  function readAttributeList(ptr, types) {
+    var result = new Array(types.length)
+    for(var i=0; i<types.length; ++i) {
+      var type = types[i]
+      result[i] = readAttributeValue(ptr, type)
+      ptr += type.count * TYPE_SIZES[type.type]
+    }
+    return result
+  }
 
   function parseVertexSplits() {
     var result = []
+    var ptr = 0
 
-    while(buffer.length < ptr + splitSize) {
+    while(ptr + splitSize <= buffer.length) {
 
-      var baseVertex = buffer.readUint32BE(ptr)
-      var leftV      = buffer.readUint8(ptr+4)
-      var rightV     = buffer.readUint8(ptr+5)
+      var baseVertex = buffer.readUInt32BE(ptr)
+      var leftV      = buffer.readUInt8(ptr+4)
+      var rightV     = buffer.readUInt8(ptr+5)
       ptr += 6
 
-      var battr = readAttributeList(ptr, vtype)
+      var battr = readAttributeList(ptr, vtypes)
       ptr += vertexSize
 
-      var lattr = readAttributeList(ptr, ctype)
+      var lattr = readAttributeList(ptr, ctypes)
       ptr += cellSize
 
-      var rattr = readAttributeList(ptr, ctype)
+      var rattr = readAttributeList(ptr, ctypes)
       ptr += cellSize
 
       var leftOrient  = leftV  >= 128
@@ -262,8 +278,7 @@ function convertBinaryToJSON(buffer) {
     return result
   }
 
-  var initialComplex = parseInitialComplex(data)
-  var vertexSplits   = parseVertexSplits(data)
+  var vertexSplits   = parseVertexSplits()
 
   return {
     header:         header,
