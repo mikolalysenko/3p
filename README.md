@@ -3,13 +3,20 @@
 
 **DRAFT SPECIFICATION**
 
-Progressive triangle streams are an implementation of [Hugh Hoppe's progressive meshes](http://research.microsoft.com/en-us/um/people/hoppe/proj/pm/) with some minor modifications favoring file sizes and fast lossless decoding over visual fidelity.
+Progressive triangle streams are an implementation of [Hugh Hoppe's progressive meshes](http://research.microsoft.com/en-us/um/people/hoppe/proj/pm/) with some minor modifications favoring fast decoding over visual fidelity. This module documents progressive triangle streams and implements reference codecs for the binary and JSON formats.
 
-This module provides documentation of progressive triangle streams as well as reference codecs for the binary and JSON formats. Optimized streaming decoders for specific applications are provided by other packages.
+## Why use 3p?
+
+Progressive meshes have two advantages over standard mesh representations like indexed face lists:
+
+1. They are typically much smaller.  In a binary 3P file, the topology data of the mesh uses 1/4 as much space as in a binary indexed triangle mesh and up to 1/10 as much space as an ASCII encoded equivalent.
+2. They can be loaded incrementally.  It is possible to process a truncated 3P file and recover an approximate geometry immediately. This decreases the amount of time spent waiting for geometry to load.
+
+Like the PLY file format, 3P files can specify arbitrary vertex and face data. 3P is also a lossless encoding, so attributes like vertex positions are not truncated in intermediate representations. 3P can be combined with standard HTTP compression schemes like gzip for further size reductions.
 
 ## Other implementations
 
-* TODO
+* TODO: Implement separate streaming parser
 
 # Format description
 
@@ -20,10 +27,10 @@ Each 3P file consists of 3 sections with the following data:
 * The file header, storing:
     + `version` - a string representing the version of the 3P file in semantic versioning format
     + `vertexCount` - the number of vertices in the stream
+    + `cellCount` - the number of cells in the stream
     + `vertexAttributeTypes` - an array of types for each vertex attribute
     + `cellAttributeTypes` - an array of types for each cell attribute
 * An initial triangulated mesh, with 4 arrays:
-    + `positions` - an array of 3 tuples of floats storing the vertex positions
     + `cells` - an array of 3 tuples of integers representing the vertex indices for each triangle
     + `vertexAttributes` - an array of arrays of vertex attributes
     + `cellAttributes` - an array of arrays of cell attributes
@@ -45,7 +52,7 @@ Each type declaration should have the following data:
 
 ## JSON format (.3PJ)
 
-The JSON format for a progressive triangle stream contains the same data as above.  Each `3P` JSON object has 3 fields with the following data:
+For debugging purposes, 3P supports a JSON format.  The JSON format for a progressive triangle stream contains the same data as above.  Each `3P` JSON object has 3 fields with the following data:
 
 * `header`
 * `initialComplex`
@@ -56,34 +63,37 @@ JSON formatted progressive triangle streams should use the file extension .3PJ
 ## Binary format (.3PB)
 
 * Network byte order
-* Magic number is `".3PB"`
-* Should use extension .3PB
+* Prefer .3PB file extension
 
 ```
 struct S3PBFile {
-  uint32             magic
+  uint8[4]           "3PB\n"
   S3PBHeader         header
   S3PBComplex        initialComplex
   S3PBVertexSplit[]  vertexSplits
 }
 
 struct S3PBHeader {
+  uint32             splitOffset
   uint32             majorVersion
   uint32             minorVersion
   uint32             patchVersion
   uint32             vertexCount
+  uint32             cellCount
+  uint32             vertexAttributeCount
+  uint32             cellAttributeCount
   S3PBAttribute[]    vertexAttributeTypes
   S3PBAttribute[]    cellAttributeTypes
 }
 
 struct S3PBAttribute {
-  uint32             nameLength
-  char[]             name
   uint32             count
   S3PBAttributeType  type
+  uint32             nameLength
+  char[]             name
 }
 
-enum S3PBAttributeType: uint8 {
+enum S3PBAttributeType: uint32 {
   uint8:      0
   uint16:     1
   uint32:     2
@@ -114,6 +124,8 @@ struct S3PBVertexSplit {
 
 ## Notes
 
+* splitOffset is the start of the vertex split section in bytes
+* Attribute names are stored as ASCII text
 * Encoders must not collapse edges incident to non-manifold or boundary vertices 
 * Vertices with more than 15 neighbors must not be split
 * Encoders should prioritize edge collapses with minimal visual impact on images
@@ -121,16 +133,15 @@ struct S3PBVertexSplit {
 * Encoders may not preserve the index of each vertex.  Encoding/decoding may permute the order of cells/vertices in the mesh.
 * Encoding must preserve topology and all attributes
 * Codecs may collapse vertices in any order subject to the implementation
+* If a decoder recieves more vertices or cells than is specified in the header, then it should terminate
+* `cellCount` and `vertexCount` should describe the total number of vertices in the stream.  If more vertices in the stream are encountered, the decoder may choose to continue processing additional splits
+* For each vertex split, the baseVertex must refer to a previous vertex in the stream
 
-## Future
+**TODO** Define how left and right vertices are computed
 
-The following features may eventually be supported:
+## Recommendations
 
-* Attribute types other than `float32`
-* Polygonal (non-triangular) cells
-* Collapses between non-adjacent vertices
-* Maybe remove `position` and combine with vertex attribute type (like PLY format)
-* Create a standard conformance test for codecs
+* Progressive triangle streams should define 
 
 # Reference Codec API
 
@@ -148,12 +159,11 @@ Once installed, they can be required and used as CommonJS modules.
 
 ### JSON
 
-##### `require('3p/encode-json')(cells, positions[, vertexAttributes, cellAttributes])`
+##### `require('3p/encode-json')(cells[, vertexAttributes, cellAttributes, vertexTypes, cellTypes])`
 
 Compresses a triangulated mesh into a JSON formatted progressive triangle stream.
 
 * `cells` is a list of triangles, each encoded as a list of 3 vertex indices
-* `positions` is a list of vertex positions, each represented by 3 floating point values
 * `vertexAttributes` is an optional array of vertex attributes
 * `cellAttributes` is an optional array of per-face attributes
 
@@ -161,7 +171,7 @@ Compresses a triangulated mesh into a JSON formatted progressive triangle stream
 
 ### Binary
 
-##### `require('3p/encode-binary')(cells, positions[, vertexAttributes, cellAttributes])`
+##### `require('3p/encode-binary')(cells[, vertexAttributes, cellAttributes, vertexTypes, cellTypes])`
 
 Same interface as above, except returns a node.js Buffer object storing a binary 3PB file.
 
@@ -178,7 +188,6 @@ Decodes a JSON formatted 3PJ object.
 **Returns** An object representing the mesh with with the following properties:
 
 * `cells` is an array storing the faces of the mesh
-* `positions` is an array of vertex positions
 * `vertexAttributes` is an array of vertex attributes
 * `cellAttributes` is an array of cell attributes
 
