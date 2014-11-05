@@ -8,6 +8,10 @@ Progressive triangle streams are an implementation [Hugh Hoppe's progressive mes
 
 This module provides documentation of the progressive triangle stream format as well as reference codecs for the binary and JSON containers. Optimized streaming decoders for specific applications are provided by other packages.
 
+## Other implementations
+
+* TODO
+
 # Format description
 
 Progressive triangle streams encode 3D triangulated meshes as a sequence of vertex split operations. Progressive triangle streams can have any number of vertex and/or face attributes, and can be truncated to produce approximations of the initial geometry. Progressive triangle streams support two distinct formats: a reference JSON format for debugging and a binary format.
@@ -22,11 +26,15 @@ Progressive triangle streams encode 3D triangulated meshes as a sequence of vert
 
 # Codec API
 
-The reference codecs are installable via npm:
+These reference codecs are installable via npm:
 
 ```
 npm install 3p
 ```
+
+Once installed, they can be required and used as CommonJS modules.
+
+Note that these codecs are not optimized for speed.
 
 ## Encoder
 
@@ -90,7 +98,8 @@ Converts a binary 3PB file to a JSON 3PJ object
 
 # References
 
-[1] H. Hoppe. "Progessive meshes"
+H. Hoppe.  "Progressive meshes"
+
 
 # License
 
