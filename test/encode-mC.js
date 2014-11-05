@@ -1,0 +1,1 @@
+require('./encoder')('mC', require('conway-hart')('mC'))

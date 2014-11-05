@@ -1,0 +1,1 @@
+require('./encoder')('icosahedron', require('conway-hart')('I'))
