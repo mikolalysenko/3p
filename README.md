@@ -100,7 +100,6 @@ Converts a binary 3PB file to a JSON 3PJ object
 
 H. Hoppe.  "Progressive meshes"
 
-
 # License
 
 Copyright 2014 Mikola Lysenko.  MIT license

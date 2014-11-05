@@ -4,7 +4,7 @@ module.exports = testDecoder
 
 var MeshDecoder      = require('../lib/decoder')
 var computeNeighbors = require('../lib/neighbors')
-var crunch           = require('../crunch')
+var crunch           = require('../encode-json')
 
 var tape = require('tape')
 
