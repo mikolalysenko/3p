@@ -25,14 +25,24 @@ function VertexSplit(
   this.rightAttributes  = rightAttributes
 }
 
+function guessTypes(attributes) {
+  return attributes.map(function(attr, i) {
+    
+  })
+}
+
 function crunchMesh(
   cells, 
-  positions, 
   vattributes, 
-  fattributes) {
+  fattributes,
+  vtypes,
+  ftypes) {
 
   vattributes = vattributes || []
   fattributes = fattributes || []
+
+  vtypes = vtypes || guessTypes(vattributes)
+  ftypes = ftypes || guessTypes(fattributes)
 
   var mesh = new Mesh(
     cells, 

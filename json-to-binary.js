@@ -30,12 +30,14 @@ function processTypes(types) {
   var offset = 0
   var result = []
   for(var i=0; i<types.length; ++i) {
-    var size = types[i].count * TYPE_SIZE[types[i].type]
+    var count  = types[i].count || 1
+    var typeId = types[i].type || 'float32'
+    var size   = count * TYPE_SIZE[typeId]
     result.push({
       offset:     offset,
-      count:      types[i].count,
+      count:      count,
       size:       size,
-      type:       types[i].type,
+      type:       typeIf,
       name:       types[i].name
     })
     offset += size
