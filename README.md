@@ -12,8 +12,6 @@ This module provides documentation of the progressive triangle stream format as 
 
 Progressive triangle streams encode 3D triangulated meshes as a sequence of vertex split operations. Progressive triangle streams can have any number of vertex and/or face attributes, and can be truncated to produce approximations of the initial geometry. Progressive triangle streams support two distinct formats: a reference JSON format for debugging and a binary format.
 
-Every progressive triangle stream contains 
-
 ## JSON format (.3PJ)
 
 **TODO**
@@ -24,33 +22,71 @@ Every progressive triangle stream contains
 
 # Codec API
 
-This module also provides a reference codec for the 3P file format.
+The reference codecs are installable via npm:
+
+```
+npm install 3p
+```
 
 ## Encoder
 
 ### JSON
 
-#### `require('3p/encode-json')(cells, positions[, vertexPositions, vertexAttributes])`
+##### `require('3p/encode-json')(cells, positions[, vertexAttributes, cellAttributes])`
+
+Compresses a triangulated mesh into a JSON formatted progressive triangle stream.
+
+* `cells` is a list of triangles, each encoded as a list of 3 vertex indices
+* `positions` is a list of vertex positions, each represented by 3 floating point values
+* `vertexAttributes` is an optional array of vertex attributes
+* `cellAttributes` is an optional array of per-face attributes
+
+**Returns** A 3PJ encoded mesh object
 
 ### Binary
 
-#### `require('3p/encode-binary')(cells, positions[, vertexPositions, vertexAttributes])`
+##### `require('3p/encode-binary')(cells, positions[, vertexAttributes, cellAttributes])`
+
+Same interface as above, except returns a node.js Buffer object storing a binary 3PB file.
 
 ## Decoder
 
 ### JSON
 
-#### `require('3p/decode-json')(json)`
+##### `require('3p/decode-json')(json)`
+
+Decodes a JSON formatted 3PJ object.
+
+* `json` is a plain old JavaScript object storing the parsed 3PJ data
+
+**Returns** An object representing the mesh with with the following properties:
+
+* `cells` is an array storing the faces of the mesh
+* `positions` is an array of vertex positions
+* `vertexAttributes` is an array of vertex attributes
+* `cellAttributes` is an array of cell attributes
 
 ### Binary
 
-#### `require('3p/decode-binary')(buffer)`
+##### `require('3p/decode-binary')(buffer)`
+
+Same as above, except takes a binary 3PB file instead of JSON.
 
 ## JSON and binary conversion
 
-#### `require('3p/json-to-binary')(json)`
+##### `require('3p/json-to-binary')(json)`
+Converts a JSON 3PJ file to a binary 3PB buffer
 
-#### `require('3p/binary-to-json')(buffer)`
+* `json` is a 3PJ javascript object
+
+**Returns** A `Buffer` representing a binary `3PB` file
+
+##### `require('3p/binary-to-json')(buffer)`
+Converts a binary 3PB file to a JSON 3PJ object
+
+* `buffer` is a `Buffer` encoding a 3PB object
+
+**Returns** A JSON 3PJ object
 
 # References
 
