@@ -7,12 +7,14 @@ var toBinary   = require('./json-to-binary')
 
 function encodeBinary(
   cells, 
-  positions, 
   vertexAttributes, 
-  cellAttributes) {
+  cellAttributes,
+  vertexAttributeTypes,
+  cellAttributeTypes) {
   return toBinary(encodeJSON(
     cells,
-    positions,
     vertexAttributes,
-    cellAttributes))
+    cellAttributes,
+    vertexAttributeTypes,
+    cellAttributeTypes))
 }
