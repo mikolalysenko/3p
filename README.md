@@ -3,9 +3,10 @@
 
 **DRAFT SPECIFICATION**
 
-This module is a reference JavaScript codec for the progressive triangle stream (3PJ and 3PB) file format. It provides documentation and conformance tests. Optimized streaming decoders are provided by other packages.
 
-Progressive triangle streams are an implementation [Hugh Hoppe's progressive meshes](1) with modifications that make it more suitable for web applications. Specifically, progressive triangle streams are optimized for fast lossless decoding instead of visual fidelity.  This tradeoff makes the resulting data more compact and speeds up loading higher resolution meshes at the cost that lower resolution meshes are somewhat degraded. For most web applications this is a reasonable tradeoff.
+Progressive triangle streams are an implementation [Hugh Hoppe's progressive meshes](1) with modifications favoring small file sizes and fast lossless decoding over the visual fidelity of intermediate representations.
+
+This module provides documentation of the progressive triangle stream format as well as reference codecs for the binary and JSON containers. Optimized streaming decoders for specific applications are provided by other packages.
 
 # Format description
 
