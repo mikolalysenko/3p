@@ -3,8 +3,7 @@
 
 **DRAFT SPECIFICATION**
 
-
-Progressive triangle streams are an implementation [Hugh Hoppe's progressive meshes](1) with modifications favoring small file sizes and fast lossless decoding over the visual fidelity of intermediate representations.
+Progressive triangle streams are an implementation [Hugh Hoppe's progressive meshes](http://research.microsoft.com/en-us/um/people/hoppe/proj/pm/) with modifications favoring small file sizes and fast lossless decoding over the visual fidelity of intermediate representations.
 
 This module provides documentation of the progressive triangle stream format as well as reference codecs for the binary and JSON containers. Optimized streaming decoders for specific applications are provided by other packages.
 
@@ -98,7 +97,6 @@ Converts a binary 3PB file to a JSON 3PJ object
 
 # References
 
-H. Hoppe.  "Progressive meshes"
 
 # License
 
