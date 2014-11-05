@@ -139,10 +139,6 @@ struct S3PBVertexSplit {
 
 **TODO** Define how left and right vertices are computed
 
-## Recommendations
-
-* Progressive triangle streams should define 
-
 # Reference Codec API
 
 These reference codecs are installable via npm:
