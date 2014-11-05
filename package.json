@@ -1,0 +1,38 @@
+{
+  "name": "3p",
+  "version": "1.0.0",
+  "description": "Progressive triangle streams",
+  "main": "encode-json.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "simplicial-complex": "^1.0.0"
+  },
+  "devDependencies": {
+    "conway-hart": "^0.1.0",
+    "tape": "^2.12.3",
+    "bunny": "^1.0.1"
+  },
+  "scripts": {
+    "test": "tape test/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mikolalysenko/3p.git"
+  },
+  "keywords": [
+    "progressive",
+    "triangle",
+    "stream",
+    "geometry",
+    "graphics",
+    "mesh"
+  ],
+  "author": "Mikola Lysenko",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mikolalysenko/3p/issues"
+  },
+  "homepage": "https://github.com/mikolalysenko/3p"
+}
