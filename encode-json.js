@@ -53,6 +53,12 @@ function crunchMesh(
     order[c.t] = counter--
   }
 
+  var header = {
+    vertexCount: numVerts,
+    vertexAttributeCount: vattributes.length,
+    cellAttributeCount: fattributes.length
+  }
+
   //Find all base vertices 
   var base = mesh.base()
   var initial = {
@@ -116,6 +122,7 @@ function crunchMesh(
 
   //Return the resulting simplicial complex
   return {
+    header: header,
     initialComplex: initial,
     vertexSplits: vsplits
   }
