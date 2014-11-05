@@ -244,7 +244,7 @@ function convertBinaryToJSON(buffer) {
 
       var leftOrient  = leftV  >= 128
       var rightOrient = rightV >= 128
-      var left        = leftV & 0x7f
+      var left        = leftV  & 0x7f
       var right       = rightV & 0x7f
 
       result.push({
@@ -258,6 +258,8 @@ function convertBinaryToJSON(buffer) {
         rightAttributes: rattr
       })
     }
+
+    return result
   }
 
   var initialComplex = parseInitialComplex(data)
