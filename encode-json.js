@@ -2,33 +2,80 @@
 
 module.exports = crunchMesh
 
-var Mesh = require('./lib/encoder')
+var MeshEncoder = require('./lib/encoder')
 
-function VertexSplit(
-  vertex, 
-  position, 
-  attributes, 
-  left,
-  leftOrientation,
-  leftAttributes,
-  right,
-  rightOrientation,
-  rightAttributes) {
-  this.vertex           = vertex
-  this.position         = position
-  this.attributes       = attributes
-  this.left             = left
-  this.leftOrientation  = leftOrientation
-  this.leftAttributes   = leftAttributes
-  this.right            = right
-  this.rightOrientation = rightOrientation
-  this.rightAttributes  = rightAttributes
-}
+var TYPE_CODES = [
+  'uint8',
+  'uint16',
+  'uint32',
+  'int8',
+  'int16',
+  'int32',
+  'float32',
+  'float64'
+]
 
 function guessTypes(attributes) {
   return attributes.map(function(attr, i) {
-    
+    //TODO: Test if attr is an ndarray or typedarray
+    var x = attr[0]
+    if(x) {
+      return {
+        name: 'attribute'+i,
+        count: Array.isArray(x) ? x.length : 1,
+        type: 'float64'
+      }
+    } else {
+      return {
+        name: 'attribute'+i,
+        count: 1,
+        type: 'float64'
+      }
+    }
   })
+}
+
+function maxVertex(cells) {
+  var maxV = 0
+  for(var i=0; i<cells.length; ++i) {
+    var c = cells[i]
+    for(var j=0; j<3; ++j) {
+      maxV = Math.max(maxV, c[j])
+    }
+  }
+  return maxV
+}
+
+function convertTypes(types) {
+  return types.map(function(type, i) {
+    var name   = type.name || ('attribute' + i)
+    var count  = type.count|0
+    var tclass = type.type
+    if(TYPE_CODES.indexOf(tclass) < 0) {
+      throw new Error('3p: invalid type class ' + tclass)
+    }
+    return {
+      name:  name,
+      count: count,
+      type:  tclass
+    }
+  })
+}
+
+
+function checkTypes(count, types, attributes) {
+  if(types.length !== attributes.length) {
+    throw new Error('3p: inconsistent attribute count')
+  }
+  for(var i=0; i<types.length; ++i) {
+    var type = types[i]
+    var attr = attributes[i]
+    if(attr.length !== count) {
+      throw new Error('3p: attribute length inconsistent')
+    }
+
+    //TODO: check attribute matches type description
+  }
 }
 
 function crunchMesh(
@@ -41,16 +88,27 @@ function crunchMesh(
   vattributes = vattributes || []
   fattributes = fattributes || []
 
-  vtypes = vtypes || guessTypes(vattributes)
-  ftypes = ftypes || guessTypes(fattributes)
+  var numCells = cells.length
+  var numVerts
+  if(vattributes.length > 0) {
+    numVerts = vattributes[0].length
+  } else {
+    numVerts = maxVertex(cells)
+  }
 
-  var mesh = new Mesh(
+  vtypes = convertTypes(vtypes || guessTypes(vattributes))
+  ftypes = convertTypes(ftypes || guessTypes(fattributes))
+
+  checkTypes(numVerts, vtypes, vattributes)
+  checkTypes(numCells, ftypes, fattributes)
+
+  var mesh = new MeshEncoder(
+    numVerts,
+    numCells,
     cells, 
-    positions, 
     vattributes, 
     fattributes)
 
-  var numVerts = positions.length
   var order = new Array(numVerts)
   var ecollapse = []
   var counter = numVerts-1
@@ -64,38 +122,41 @@ function crunchMesh(
   }
 
   var header = {
-    vertexCount: numVerts,
-    vertexAttributeCount: vattributes.length,
-    cellAttributeCount: fattributes.length
+    version:              "1.0.0",
+    vertexCount:          numVerts,
+    cellCount:            numCells,
+    vertexAttributeTypes: vtypes,
+    cellAttributeTypes:   ftypes
   }
 
-  //Find all base vertices 
+  //Get base mesh
   var base = mesh.base()
-  var initial = {
-    positions: [],
-    vertexAttributes: [],
-    cells: [],
-    cellAttributes: []
-  }
 
+  //Convert into JSON format
+  var initial = {
+    vertexCount:      base.verts.length,
+    cellCount:        base.cells.length,
+    cells:            new Array(base.cells.length),
+    cellAttributes:   new Array(ftypes.length),
+    vertexAttributes: new Array(vtypes.length)
+  }
   for(var i=0; i<vattributes.length; ++i) {
-    initial.vertexAttributes.push([])
+    initial.vertexAttributes[i] = new Array(base.vertexCount)
   }
   for(var i=0; i<fattributes.length; ++i) {
-    initial.faceAttributes.push([])
+    initial.faceAttributes[i] = new Array(base.cellCount)
   }
 
-  //Construct base vertices
+  //Copy vertices
   for(var i=0; i<base.verts.length; ++i) {
     var v = base.verts[i]
     order[v] = i
-    initial.positions.push(positions[v])
     for(var j=0; j<vattributes.length; ++j) {
-      initial.vertexAttributes[j].push(vattributes[j][v])
+      initial.vertexAttributes[j][i] = vattributes[j][v]
     }
   }
 
-  //Construct base faces
+  //Copy faces
   for(var i=0; i<base.cells.length; ++i) {
     var f = base.cells[i]
     var c = cells[f]
@@ -103,9 +164,9 @@ function crunchMesh(
     for(var j=0; j<3; ++j) {
       nf[j] = order[c[j]]
     }
-    initial.cells.push(nf)
+    initial.cells[i] = nf
     for(var j=0; j<fattributes.length; ++j) {
-      initial.cellAttributes[j].push(fattributes[j][f])
+      initial.cellAttributes[j][i] = fattributes[j][f]
     }
   }
 
@@ -118,16 +179,16 @@ function crunchMesh(
       vattr.push(vattributes[j][e.t])
     }
 
-    vsplits.push(new VertexSplit(
-      order[e.s],
-      positions[e.t],
-      vattr,
-      e.left,
-      e.leftOrientation,
-      e.leftAttributes,
-      e.right,
-      e.rightOrientation,
-      e.rightAttributes))
+    vsplits.push({
+      baseVertex:       order[e.s],
+      vertexAttributes: vattr,
+      left:             e.left,
+      leftOrientation:  e.leftOrientation,
+      leftAttributes:   e.leftAttributes,
+      right:            e.right,
+      rightOrientation: e.rightOrientation,
+      rightAttributes:  e.rightAttributes
+    })
   }
 
   //Return the resulting simplicial complex

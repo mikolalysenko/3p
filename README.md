@@ -155,7 +155,7 @@ Once installed, they can be required and used as CommonJS modules.
 
 ### JSON
 
-##### `require('3p/encode-json')(cells[, vertexAttributes, cellAttributes, vertexTypes, cellTypes])`
+##### `require('3p/encode-json')(vertexCount, cells[, vertexAttributes, cellAttributes, vertexTypes, cellTypes])`
 
 Compresses a triangulated mesh into a JSON formatted progressive triangle stream.
 
@@ -167,7 +167,7 @@ Compresses a triangulated mesh into a JSON formatted progressive triangle stream
 
 ### Binary
 
-##### `require('3p/encode-binary')(cells[, vertexAttributes, cellAttributes, vertexTypes, cellTypes])`
+##### `require('3p/encode-binary')(vertexCount, cells[, vertexAttributes, cellAttributes, vertexTypes, cellTypes])`
 
 Same interface as above, except returns a node.js Buffer object storing a binary 3PB file.
 

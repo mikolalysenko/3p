@@ -17,10 +17,14 @@ function heapParent(i) {
 function testEncoder(name, data, step) {
   tape('encode: ' + name, function(t) {
     var mesh = new MeshEncoder(
+      data.positions.length,
+      data.cells.length,
       data.cells,
-      data.positions,
-      [],
+      [data.positions],
       [])
+
+    t.equals(mesh.numVertices, data.positions.length)
+    t.equals(mesh.numCells, data.cells.length)
 
     step = step||0
 
@@ -135,11 +139,39 @@ function testEncoder(name, data, step) {
     checkTopology(mesh)
 
     while(true) {
+      var prevNeighbors = mesh.neighbors.map(function(nbhd) {
+        return nbhd.slice()
+      })
+      var prevCells = mesh.cells.map(function(cell) {
+        return cell.slice()
+      })
+      var prevStars = mesh.stars.map(function(star) {
+        return star.slice()
+      })
       var ecol = mesh.pop()
       if(!ecol) {
         break
       }
+
       console.log('collapse:', ecol.s, ecol.t)
+
+      var es = ecol.s
+      t.ok(0 <= es && prevNeighbors[es].length > 0, 'check s valid')
+
+      var et = ecol.t
+      t.ok(0 <= et && prevNeighbors[et].length > 0, 'check t valid')
+
+      t.ok(prevNeighbors[es].indexOf(et) >= 0, 'check linked s->t')
+      t.ok(prevNeighbors[et].indexOf(es) >= 0, 'check linked t->s')
+
+      var el = ecol.left
+      t.ok(0 <= el && el < mesh.stars[es].length, 'check left valid')
+
+      var er = ecol.right
+      t.ok(0 <= er && er < mesh.stars[es].length, 'check left valid')
+
+      var lv = mesh.neighbors
+
       checkTopology(mesh)
     }
 

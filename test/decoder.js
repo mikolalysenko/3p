@@ -32,11 +32,13 @@ function reorder(nbhd, star, cells, vertex) {
 
 function testDecoder(name, geometry) {
   tape('decode: ' + name, function(t) {
-    var crunched = crunch(geometry.cells, geometry.positions)
+    var crunched = crunch(
+      geometry.cells, 
+      [geometry.positions])
     var initial = crunched.initialComplex
     
     var decoder = new MeshDecoder(
-      initial.positions,
+      initial.vertexCount,
       initial.vertexAttributes,
       initial.cells,
       initial.cellAttributes)
@@ -44,13 +46,15 @@ function testDecoder(name, geometry) {
     function checkNeighborhood(v) {
       var star = decoder.stars[v]
       var nbhd = decoder.neighbors[v]
-      t.equals(star.length, nbhd.length, 'star and nbhd length consistent: ' +
-        nbhd.join() + " -- " + star.join())
-
-      console.log(v, '---', star.map(function(f) {
+      
+      console.log('checking vertex:', v, '---', star.map(function(f) {
         return decoder.cells[f]
       }).join(':'))
 
+      t.equals(star.length, nbhd.length, 'star and nbhd length consistent: ' +
+        nbhd.join() + " -- " + star.join())
+
+      
       for(var i=0; i<nbhd.length; ++i) {
         var f = star[i]
         var u = nbhd[i]
@@ -70,7 +74,7 @@ function testDecoder(name, geometry) {
     }
 
     function verifyMesh() {
-      var numVerts = decoder.positions.length
+      var numVerts = decoder.numVerts
       var numCells = decoder.cells.length
 
       /*
@@ -115,9 +119,8 @@ function testDecoder(name, geometry) {
       verifyMesh()
       var vsplit = crunched.vertexSplits[i]
       decoder.vsplit(
-        vsplit.vertex,
-        vsplit.position,
-        vsplit.attributes,
+        vsplit.baseVertex,
+        vsplit.vertexAttributes,
         vsplit.left,
         vsplit.leftOrientation,
         vsplit.leftAttributes,
@@ -128,7 +131,7 @@ function testDecoder(name, geometry) {
 
     verifyMesh()
 
-    t.equals(decoder.positions.length, geometry.positions.length)
+    t.equals(decoder.numVerts, geometry.positions.length)
     t.equals(decoder.cells.length, geometry.cells.length)
 
     t.end()
