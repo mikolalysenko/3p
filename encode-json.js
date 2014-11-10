@@ -109,6 +109,8 @@ function crunchMesh(
     vattributes, 
     fattributes)
 
+  var nbhdList = []
+
   var order = new Array(numVerts)
   var ecollapse = []
   var counter = numVerts-1
@@ -118,6 +120,7 @@ function crunchMesh(
       break
     }
     ecollapse.push(c)
+    nbhdList.push(mesh.neighbors[c.s].slice())
     order[c.t] = counter--
   }
 
@@ -150,7 +153,7 @@ function crunchMesh(
   //Copy vertices
   for(var i=0; i<base.verts.length; ++i) {
     var v = base.verts[i]
-    order[v] = i
+    order[v] = counter--
     for(var j=0; j<vattributes.length; ++j) {
       initial.vertexAttributes[j][i] = vattributes[j][v]
     }
@@ -170,6 +173,7 @@ function crunchMesh(
     }
   }
 
+
   //Construct vertex splits
   var vsplits = []
   for(var i=ecollapse.length-1; i>=0; --i) {
@@ -179,13 +183,30 @@ function crunchMesh(
       vattr.push(vattributes[j][e.t])
     }
 
+    var pnbhd = nbhdList[i]
+    var onbhd = new Array(pnbhd.length)
+    var k = 0
+    for(var j=0; j<onbhd.length; ++j) {
+      var u = order[pnbhd[j]]
+      onbhd[j] = u
+      if(u < onbhd[k]) {
+        k = j
+      }
+    }
+
+    var leftV  = order[pnbhd[e.left]]
+    var rightV = order[pnbhd[e.right]]
+    for(var j=0; j<onbhd.length; ++j) {
+      pnbhd[j] = onbhd[(j+k) % onbhd.length]
+    }
+
     vsplits.push({
       baseVertex:       order[e.s],
       vertexAttributes: vattr,
-      left:             e.left,
+      left:             pnbhd.indexOf(leftV),
       leftOrientation:  e.leftOrientation,
       leftAttributes:   e.leftAttributes,
-      right:            e.right,
+      right:            pnbhd.indexOf(rightV),
       rightOrientation: e.rightOrientation,
       rightAttributes:  e.rightAttributes
     })

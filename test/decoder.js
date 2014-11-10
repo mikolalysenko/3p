@@ -68,8 +68,8 @@ function testDecoder(name, geometry) {
         var cw = c.indexOf(w)
 
         t.ok(cv >= 0 && cu >= 0 && cw >= 0, 'cell valid: ' + c)
-        t.equals((cu+2)%3, cv, 'check neighborhood in')
-        t.equals((cu+1)%3, cw, 'check neighborhood out')
+        t.equals((cv+1)%3, cu, 'check neighborhood incoming edge')
+        t.equals((cv+2)%3, cw, 'check neighborhood outgoing edge')
       }
     }
 
@@ -118,6 +118,7 @@ function testDecoder(name, geometry) {
       console.log(decoder.cells.join(':'))
       verifyMesh()
       var vsplit = crunched.vertexSplits[i]
+      console.log(decoder.neighbors[vsplit.baseVertex], JSON.stringify(vsplit))
       decoder.vsplit(
         vsplit.baseVertex,
         vsplit.vertexAttributes,

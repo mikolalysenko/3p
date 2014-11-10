@@ -2,14 +2,15 @@
 
 module.exports = decodeJSON
 
-var MeshDecoder = require('../lib/decoder')
+var MeshDecoder = require('./lib/decoder')
 
 function decodeJSON(json) {
   var initial = json.initialComplex
   var decoder = new MeshDecoder(
+    initial.vertexCount,
+    initial.vertexAttributes,
     initial.cells,
-    initial.cellAttributes,
-    initial.vertexAttributes)
+    initial.cellAttributes)
 
   var vsplits = json.vertexSplits
   for(var i=0; i<vsplits.length; ++i) {

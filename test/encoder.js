@@ -67,10 +67,16 @@ function testEncoder(name, data, step) {
       if(--count > 0) {
         return
       }
+
       count = step
       var stars = new Array(numVertices)
       for(var i=0; i<numVertices; ++i) {
         stars[i] = []
+
+        var lnbhd = mesh.neighbors[i]
+        for(var j=0; j<lnbhd.length; ++j) {
+          t.ok(mesh.vertexLive[lnbhd[j]], 'neighbors live')
+        }
       }
       for(var j=0; j<mesh.cells.length; ++j) {
         var c = mesh.cells[j]
@@ -82,17 +88,11 @@ function testEncoder(name, data, step) {
       }
 
       for(var i=0; i<numVertices; ++i) {
-        stars[i].sort(function(a,b) {
-          return a - b
-        })
-        t.same(mesh.stars[i], stars[i], 'stars for ' + i)
-      }
-
-      for(var i=0; i<numVertices; ++i) {
         var nbhd = computeNeighbors(
           mesh.cells, 
           stars[i], 
           i)
+        t.same(mesh.stars[i], stars[i], 'stars for ' + i)
         t.same(mesh.neighbors[i], nbhd, 'neighbors for ' + i)
         for(var j=0; j<nbhd.length; ++j) {
           var v = nbhd[j]
@@ -138,6 +138,7 @@ function testEncoder(name, data, step) {
 
     checkTopology(mesh)
 
+    var fcount = mesh.cells.length
     while(true) {
       var prevNeighbors = mesh.neighbors.map(function(nbhd) {
         return nbhd.slice()
@@ -152,8 +153,6 @@ function testEncoder(name, data, step) {
       if(!ecol) {
         break
       }
-
-      console.log('collapse:', ecol.s, ecol.t)
 
       var es = ecol.s
       t.ok(0 <= es && prevNeighbors[es].length > 0, 'check s valid')
@@ -170,7 +169,34 @@ function testEncoder(name, data, step) {
       var er = ecol.right
       t.ok(0 <= er && er < mesh.stars[es].length, 'check left valid')
 
-      var lv = mesh.neighbors
+      var estar = prevStars[es]
+      var enbhd = mesh.neighbors[es]
+
+      var lv = enbhd[el]
+      var rv = enbhd[er]
+      var rf = -1
+      var lf = -1
+      for(var i=0; i<estar.length; ++i) {
+        var f = estar[i]
+        var cell = prevCells[f]
+        if(cell.indexOf(et) >= 0) {
+          if(cell.indexOf(lv) >= 0) {
+            lf = f
+          } else if(cell.indexOf(rv) >= 0) {
+            rf = f
+          }
+        }
+      }
+      if(lf < 0) {
+        t.fail('missing left face')
+      } else {
+        t.pass('left face ok')
+      }
+      if(rf < 0) {
+        t.fail('missing right face: ' + JSON.stringify(ecol) + ' -- ' + rv)
+      } else {
+        t.pass('right face ok')
+      }
 
       checkTopology(mesh)
     }
