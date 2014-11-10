@@ -1,9 +1,7 @@
 3p: Progressive Triangle Streams
 ================================
 
-**WORK IN PROGRESS**
-
-Progressive triangle streams are an implementation of [Hugues Hoppe's progressive meshes](http://research.microsoft.com/en-us/um/people/hoppe/proj/pm/) with minor modifications favoring fast decoding over visual fidelity. The format is flexible and different codecs can choose different strategies for splitting vertices. This module documents progressive triangle streams and implements reference codecs for the binary and JSON formats.
+Progressive triangle streams are an implementation of [Hugues Hoppe's progressive meshes](http://research.microsoft.com/en-us/um/people/hoppe/proj/pm/) with minor modifications favoring fast decoding over visual fidelity. The format is flexible and different codecs can choose different strategies for splitting vertices. This module documents progressive triangle streams and implements reference codecs for the binary and JSON formats.  The intention of this file format is to provide a basic container format for experimenting with different strategies for performing edge collapses on meshes, and to provide a common language for processing progressive mesh data.
 
 ## Why use 3p?
 
@@ -15,8 +13,6 @@ Progressive meshes have two advantages over standard mesh representations like i
 Like the PLY file format, 3P files can specify arbitrary vertex and face data. 3P is also a lossless encoding, so attributes like vertex positions are not truncated in intermediate representations. 3P can be combined with standard HTTP compression schemes like gzip for further size reductions.
 
 ## Other implementations
-
-* TODO: Implement separate streaming parser
 
 # Reference Codec API
 
