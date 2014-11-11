@@ -10,9 +10,10 @@
     "simplicial-complex": "^1.0.0"
   },
   "devDependencies": {
+    "bunny": "^1.0.1",
     "conway-hart": "^0.1.0",
-    "tape": "^2.12.3",
-    "bunny": "^1.0.1"
+    "stanford-dragon": "^1.1.1",
+    "tape": "^2.12.3"
   },
   "scripts": {
     "test": "tape test/*.js"

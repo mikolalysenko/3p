@@ -85,6 +85,11 @@ function crunchMesh(
   vtypes,
   ftypes) {
 
+  //Duplicate cells
+  cells = cells.map(function(cell) {
+    return cell.slice()
+  })
+
   vattributes = vattributes || []
   fattributes = fattributes || []
 

@@ -212,7 +212,13 @@ struct S3PBVertexSplit {
 
 # Benchmarks and comparisons
 
-**TODO**
+Sizes are in bytes
+
+| Mesh            | JSON | 3p | 3p + gzip |
+| --------------- | ---- | --- | --------- |
+| Stanford bunny  | 110361 | 33190 | 27531 |
+
+
 
 # References
 
