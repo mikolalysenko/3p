@@ -218,6 +218,7 @@ Sizes are in bytes
 | Mesh            | JSON | 3p | 3p + gzip |
 | --------------- | ---- | --- | --------- |
 | Stanford bunny  | 110361 | 33190 | 27531 |
+| Stanford dragon  | 2227889 | 643000 | 422663 |
 
 
 
