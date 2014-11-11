@@ -195,6 +195,7 @@ struct S3PBVertexSplit {
 
 ## Notes
 
+* Manifold vertices must be stored in initial complex, non-manifold vertices and their neighbors can't be split
 * In `S3PBVertexSplit`, the upper bit of `left` and `right` stores the orientation of the vertex
 * The lower 7 bits of left and right are an index into the neighbors of `s`
 * splitOffset is the start of the vertex split section in bytes
